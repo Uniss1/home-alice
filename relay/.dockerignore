@@ -1,0 +1,28 @@
+# Documentation
+*.md
+README.md
+DEPLOYMENT.md
+
+# Compiled binaries
+relay
+relay-linux-amd64
+relay-*
+
+# Git
+.git
+.gitignore
+
+# Environment
+.env
+.env.*
+
+# Go
+*.test
+*.out
+coverage.txt
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
