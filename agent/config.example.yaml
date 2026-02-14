@@ -18,6 +18,9 @@ llm:
 
 vk_token: ""
 
+# Браузер: запустите Яндекс Браузер с флагом --remote-debugging-port=9222
+browser_cdp_url: "http://localhost:9222"
+
 allowed_commands:
   - "ipconfig"
   - "systeminfo"

@@ -18,6 +18,7 @@ class AgentConfig:
     api_key: str
     llm: LLMConfig
     vk_token: str = ""
+    browser_cdp_url: str = "http://localhost:9222"
     allowed_commands: list[str] = field(default_factory=list)
 
 
@@ -36,5 +37,6 @@ def load_config(path: str) -> AgentConfig:
             folder_id=llm_data.get("folder_id", ""),
         ),
         vk_token=data.get("vk_token", ""),
+        browser_cdp_url=data.get("browser_cdp_url", "http://localhost:9222"),
         allowed_commands=data.get("allowed_commands", []),
     )

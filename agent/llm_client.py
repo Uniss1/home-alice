@@ -206,6 +206,44 @@ TOOL_DEFINITIONS = [
     {
         "type": "function",
         "function": {
+            "name": "browser_list_tabs",
+            "description": "Показать список открытых вкладок браузера (с пометкой где играет видео)",
+            "parameters": {"type": "object", "properties": {}, "required": []},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_pause_video",
+            "description": "Поставить видео на паузу в браузере (найдёт вкладку с играющим видео автоматически)",
+            "parameters": {"type": "object", "properties": {}, "required": []},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_play_video",
+            "description": "Продолжить воспроизведение видео в браузере (снять с паузы)",
+            "parameters": {"type": "object", "properties": {}, "required": []},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "browser_search",
+            "description": "Найти поле поиска на текущей странице в браузере и ввести запрос",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Поисковый запрос"},
+                },
+                "required": ["query"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "run_command",
             "description": "Выполнить системную команду (только из белого списка)",
             "parameters": {
@@ -226,10 +264,10 @@ def _yandex_tools() -> list[dict]:
 
 
 class LLMClient:
-    def __init__(self, config: LLMConfig, vk_token: str = "", allowed_commands: list[str] | None = None):
+    def __init__(self, config: LLMConfig, vk_token: str = "", browser_cdp_url: str = "http://localhost:9222", allowed_commands: list[str] | None = None):
         self.provider = config.provider
         self.model = config.model
-        self.executor = ToolExecutor(vk_token=vk_token, allowed_commands=allowed_commands)
+        self.executor = ToolExecutor(vk_token=vk_token, browser_cdp_url=browser_cdp_url, allowed_commands=allowed_commands)
 
         if self.provider == "yandexgpt":
             self.folder_id = config.folder_id

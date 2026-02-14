@@ -6,13 +6,15 @@ from agent.tools.browser import open_url, search_vk_video
 from agent.tools.audio import volume_set, volume_mute
 from agent.tools.keyboard import press_keys, type_text
 from agent.tools.process import list_processes, kill_process
+from agent.tools.browser_control import BrowserController
 
 logger = logging.getLogger(__name__)
 
 
 class ToolExecutor:
-    def __init__(self, vk_token: str = "", allowed_commands: list[str] | None = None):
+    def __init__(self, vk_token: str = "", browser_cdp_url: str = "http://localhost:9222", allowed_commands: list[str] | None = None):
         self.vk_token = vk_token
+        self.browser = BrowserController(browser_cdp_url)
         self.allowed_commands = allowed_commands or []
 
     def execute(self, tool_name: str, args: dict) -> str:
@@ -53,6 +55,14 @@ class ToolExecutor:
                     return list_processes(args.get("top_n", 15))
                 case "kill_process":
                     return kill_process(args.get("pid", 0))
+                case "browser_list_tabs":
+                    return self.browser.list_tabs()
+                case "browser_pause_video":
+                    return self.browser.pause_video()
+                case "browser_play_video":
+                    return self.browser.play_video()
+                case "browser_search":
+                    return self.browser.search(args.get("query", ""))
                 case "run_command":
                     cmd = args.get("command", "")
                     if cmd.split()[0] not in self.allowed_commands:

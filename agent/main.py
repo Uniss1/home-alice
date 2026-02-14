@@ -19,6 +19,7 @@ async def run_agent(config_path: str):
     llm = LLMClient(
         config=config.llm,
         vk_token=config.vk_token,
+        browser_cdp_url=config.browser_cdp_url,
         allowed_commands=config.allowed_commands,
     )
     url = f"{config.server_url}?key={config.api_key}"
