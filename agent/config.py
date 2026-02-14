@@ -9,6 +9,7 @@ class LLMConfig:
     api_key: str
     base_url: str
     model: str
+    folder_id: str = ""
 
 
 @dataclass
@@ -32,6 +33,7 @@ def load_config(path: str) -> AgentConfig:
             api_key=llm_data["api_key"],
             base_url=llm_data["base_url"],
             model=llm_data["model"],
+            folder_id=llm_data.get("folder_id", ""),
         ),
         vk_token=data.get("vk_token", ""),
         allowed_commands=data.get("allowed_commands", []),

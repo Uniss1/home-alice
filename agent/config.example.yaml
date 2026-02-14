@@ -1,11 +1,20 @@
 server_url: "wss://your-vps.com/ws"
 api_key: "your-secret-key"
 
+# === YandexGPT (рекомендуется) ===
 llm:
-  provider: "glm4"
-  api_key: "your-glm4-api-key"
-  base_url: "https://open.bigmodel.cn/api/paas/v4"
-  model: "glm-4"
+  provider: "yandexgpt"
+  api_key: "your-yandex-cloud-api-key"
+  base_url: "https://llm.api.cloud.yandex.net"
+  model: "yandexgpt/rc"
+  folder_id: "your-folder-id"
+
+# === Groq (альтернатива) ===
+# llm:
+#   provider: "groq"
+#   api_key: "gsk_..."
+#   base_url: "https://api.groq.com/openai/v1"
+#   model: "llama-3.3-70b-versatile"
 
 vk_token: ""
 

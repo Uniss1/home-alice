@@ -1,6 +1,7 @@
 # agent/llm_client.py
 import json
 import logging
+import httpx
 from openai import OpenAI
 from agent.config import LLMConfig
 from agent.tool_executor import ToolExecutor
@@ -219,23 +220,39 @@ TOOL_DEFINITIONS = [
 ]
 
 
+def _yandex_tools() -> list[dict]:
+    """Convert tool definitions to YandexGPT format."""
+    return [{"function": t["function"]} for t in TOOL_DEFINITIONS]
+
+
 class LLMClient:
     def __init__(self, config: LLMConfig, vk_token: str = "", allowed_commands: list[str] | None = None):
-        self.client = OpenAI(api_key=config.api_key, base_url=config.base_url)
+        self.provider = config.provider
         self.model = config.model
         self.executor = ToolExecutor(vk_token=vk_token, allowed_commands=allowed_commands)
+
+        if self.provider == "yandexgpt":
+            self.folder_id = config.folder_id
+            self.yandex_api_key = config.api_key
+            self.yandex_base_url = config.base_url
+        else:
+            self.client = OpenAI(api_key=config.api_key, base_url=config.base_url)
 
     def get_tool_definitions(self) -> list[dict]:
         return TOOL_DEFINITIONS
 
     def process_command(self, user_text: str) -> str:
+        if self.provider == "yandexgpt":
+            return self._process_yandexgpt(user_text)
+        return self._process_openai(user_text)
+
+    def _process_openai(self, user_text: str) -> str:
         messages = [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_text},
         ]
 
         try:
-            # Up to 3 rounds of tool calls
             for _ in range(3):
                 response = self.client.chat.completions.create(
                     model=self.model,
@@ -246,11 +263,9 @@ class LLMClient:
 
                 choice = response.choices[0]
 
-                # If no tool calls — return the text response
                 if not choice.message.tool_calls:
                     return choice.message.content or "Готово"
 
-                # Execute tool calls
                 messages.append(choice.message)
                 for tool_call in choice.message.tool_calls:
                     fn_name = tool_call.function.name
@@ -263,12 +278,93 @@ class LLMClient:
                         "content": result,
                     })
 
-            # If we exhausted rounds, get final response
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=messages,
             )
             return response.choices[0].message.content or "Готово"
+
+        except Exception as e:
+            logger.error("LLM error: %s", e)
+            return f"Не удалось обработать команду: {e}"
+
+    def _process_yandexgpt(self, user_text: str) -> str:
+        model_uri = f"gpt://{self.folder_id}/{self.model}"
+        messages = [
+            {"role": "system", "text": SYSTEM_PROMPT},
+            {"role": "user", "text": user_text},
+        ]
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Api-Key {self.yandex_api_key}",
+            "x-folder-id": self.folder_id,
+            "x-data-logging-enabled": "false",
+        }
+
+        url = f"{self.yandex_base_url}/foundationModels/v1/completion"
+
+        try:
+            for _ in range(3):
+                body = {
+                    "modelUri": model_uri,
+                    "completionOptions": {
+                        "stream": False,
+                        "temperature": 0.3,
+                        "maxTokens": 1000,
+                    },
+                    "messages": messages,
+                    "tools": _yandex_tools(),
+                }
+
+                resp = httpx.post(url, headers=headers, json=body, timeout=10)
+                resp.raise_for_status()
+                data = resp.json()
+
+                alt = data["result"]["alternatives"][0]
+                msg = alt["message"]
+
+                # No tool calls — return text
+                if "toolCallList" not in msg:
+                    return msg.get("text", "Готово")
+
+                # Execute tool calls
+                tool_calls = msg["toolCallList"]["toolCalls"]
+                messages.append(msg)
+
+                for tc in tool_calls:
+                    fc = tc["functionCall"]
+                    fn_name = fc["name"]
+                    fn_args = fc.get("arguments", {})
+                    logger.info("Calling tool: %s(%s)", fn_name, fn_args)
+                    result = self.executor.execute(fn_name, fn_args)
+
+                    messages.append({
+                        "role": "assistant",
+                        "toolResultList": {
+                            "toolResults": [{
+                                "functionResult": {
+                                    "name": fn_name,
+                                    "content": result,
+                                }
+                            }]
+                        },
+                    })
+
+            # Final response without tools
+            body = {
+                "modelUri": model_uri,
+                "completionOptions": {
+                    "stream": False,
+                    "temperature": 0.3,
+                    "maxTokens": 1000,
+                },
+                "messages": messages,
+            }
+            resp = httpx.post(url, headers=headers, json=body, timeout=10)
+            resp.raise_for_status()
+            data = resp.json()
+            return data["result"]["alternatives"][0]["message"].get("text", "Готово")
 
         except Exception as e:
             logger.error("LLM error: %s", e)
