@@ -1,0 +1,15 @@
+server_url: "wss://your-vps.com/ws"
+api_key: "your-secret-key"
+
+llm:
+  provider: "glm4"
+  api_key: "your-glm4-api-key"
+  base_url: "https://open.bigmodel.cn/api/paas/v4"
+  model: "glm-4"
+
+vk_token: ""
+
+allowed_commands:
+  - "ipconfig"
+  - "systeminfo"
+  - "tasklist"
