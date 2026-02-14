@@ -175,7 +175,7 @@ scp relay-linux-amd64 user@your-vps:/opt/home-alice/relay
 
 ```bash
 cd /opt
-git clone https://github.com/yourusername/home-alice.git
+git clone https://github.com/Uniss1/home-alice.git
 cd home-alice/relay
 ```
 
