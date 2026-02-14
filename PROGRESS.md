@@ -4,7 +4,7 @@
 **Branch:** `home-alice-v2-impl`
 **Started:** 2026-02-14
 
-## Completed Tasks (6/13)
+## Completed Tasks (9/13)
 
 - ✅ **Task 1:** Go-relay — project setup
 - ✅ **Task 2:** Go-relay — full implementation
@@ -18,12 +18,18 @@
   - Tests: 4 passed (shutdown, reboot, sleep_pc, get_system_info)
 - ✅ **Task 6:** Agent — window management tools (TDD)
   - Tests: 3 passed (list_windows, switch_window, close_window)
+- ✅ **Task 7:** Agent — browser tools (TDD)
+  - Tests: 6 passed (open_url, search_vk_video)
+  - Commit: 1e96067
+- ✅ **Task 8:** Agent — audio tools (TDD)
+  - Tests: 7 passed (volume_set, volume_mute)
+  - Commit: d8841a8
+- ✅ **Task 9:** Agent — keyboard tools (TDD)
+  - Tests: 4 passed (press_keys, type_text)
+  - Commit: 536cbf0
 
-## Remaining Tasks (7/13)
+## Remaining Tasks (4/13)
 
-- ⏳ **Task 7:** Agent — browser tools (TDD)
-- ⏳ **Task 8:** Agent — audio tools (TDD)
-- ⏳ **Task 9:** Agent — keyboard tools (TDD)
 - ⏳ **Task 10:** Agent — process tools (TDD)
 - ⏳ **Task 11:** Agent — LLM client with function calling (TDD)
 - ⏳ **Task 12:** Agent — main entry point
@@ -31,7 +37,7 @@
 
 ## Next Batch
 
-**Tasks 7-9:** Browser, Audio, Keyboard tools (TDD)
+**Task 10:** Process tools (TDD)
 
 ## Fixes Applied to Plan
 
@@ -49,10 +55,13 @@
 5. `c098fa7` - feat(agent): add config module
 6. `4c82300` - feat(agent): add system tools (shutdown, reboot, sleep, info)
 7. `21f290c` - feat(agent): add window management tools
+8. `1e96067` - feat(agent): add browser tools (open_url, search_vk_video)
+9. `d8841a8` - feat(agent): add audio tools (volume control)
+10. `536cbf0` - feat(agent): add keyboard tools (hotkeys, typing)
 
 ## To Resume
 
 ```bash
 cd /home/dmin/projects/home_alice/.worktrees/home-alice-v2-impl
-# Continue with Task 7 (browser tools)
+# Continue with Task 10 (process tools)
 ```
