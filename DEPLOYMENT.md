@@ -163,6 +163,207 @@ scp relay-linux-amd64 user@your-vps:/opt/home-alice/relay
 
 ---
 
+## Вариант 3: Docker Deployment (Рекомендуется для VPS)
+
+### Требования
+
+- Docker и Docker Compose установлены на VPS
+- Nginx Proxy Manager настроен и работает
+- Docker сеть `nginx_default` существует
+
+### Шаг 1: Клонировать репозиторий
+
+```bash
+cd /opt
+git clone https://github.com/yourusername/home-alice.git
+cd home-alice/relay
+```
+
+### Шаг 2: Создать .env файл
+
+```bash
+# Сгенерировать случайный API ключ
+cat > .env <<EOF
+API_KEY=$(openssl rand -hex 32)
+LISTEN_ADDR=:8080
+EOF
+
+# Сохранить API_KEY для настройки Agent
+cat .env
+```
+
+**ВАЖНО:** Сохраните значение `API_KEY` - оно понадобится для конфигурации Agent.
+
+### Шаг 3: Проверить Docker сеть
+
+```bash
+# Убедиться что nginx_default существует
+docker network ls | grep nginx_default
+
+# Если не существует, создать
+docker network create nginx_default
+```
+
+### Шаг 4: Собрать и запустить контейнер
+
+```bash
+docker-compose up -d --build
+```
+
+**Ожидаемый вывод:**
+```
+Building relay
+[+] Building 45.2s (15/15) FINISHED
+...
+Creating home-alice-relay ... done
+```
+
+### Шаг 5: Проверить статус
+
+```bash
+# Статус контейнера
+docker-compose ps
+
+# Логи
+docker-compose logs -f
+
+# Health check
+docker exec home-alice-relay wget -qO- http://localhost:8080/health
+```
+
+**Ожидаемый ответ:**
+```json
+{"status":"ok","agent_connected":false}
+```
+
+### Шаг 6: Настроить Nginx Proxy Manager
+
+1. Открыть NPM UI: `http://your-vps-ip:81`
+2. Создать новый Proxy Host:
+   - **Domain Names:** `your-domain.com`
+   - **Scheme:** `http`
+   - **Forward Hostname/IP:** `home-alice-relay`
+   - **Forward Port:** `8080`
+   - **WebSocket Support:** ✅ **Включить обязательно!**
+3. **SSL Tab:**
+   - Request New SSL Certificate
+   - Agree to Let's Encrypt ToS
+   - Force SSL: ✅
+4. **Save**
+
+### Шаг 7: Обновить конфигурацию Agent (на Windows ПК)
+
+Отредактировать `agent/config.yaml`:
+
+```yaml
+server_url: "wss://your-domain.com/ws"  # Через NPM
+api_key: "<API_KEY из .env файла VPS>"
+
+llm:
+  provider: "glm4"
+  api_key: "your-glm4-api-key"
+  base_url: "https://open.bigmodel.cn/api/paas/v4"
+  model: "glm-4"
+```
+
+### Шаг 8: Запустить Agent
+
+```bash
+python -m agent.main
+```
+
+**Ожидаемый вывод:**
+```
+2026-02-14 10:30:45,123 [INFO] agent.main: Connecting to wss://your-domain.com/ws
+2026-02-14 10:30:45,456 [INFO] agent.main: Connected to relay server
+```
+
+### Шаг 9: Проверить health check
+
+```bash
+curl https://your-domain.com/health
+```
+
+**Ожидаемый ответ:**
+```json
+{"status":"ok","agent_connected":true}
+```
+
+### Управление контейнером
+
+```bash
+# Остановить
+docker-compose stop
+
+# Запустить
+docker-compose start
+
+# Перезапустить
+docker-compose restart
+
+# Полная остановка и удаление
+docker-compose down
+
+# Пересборка и запуск
+docker-compose up -d --build
+
+# Просмотр логов
+docker-compose logs -f
+
+# Просмотр последних 100 строк
+docker-compose logs --tail=100
+```
+
+### Обновление Relay
+
+```bash
+cd /opt/home-alice/relay
+git pull
+docker-compose up -d --build
+docker-compose logs -f
+```
+
+### Устранение неполадок
+
+**Agent не подключается:**
+```bash
+# Проверить логи relay
+docker-compose logs -f
+
+# Проверить что API_KEY совпадает
+cat .env
+# Сравнить с agent/config.yaml на Windows
+```
+
+**502 Bad Gateway в NPM:**
+```bash
+# Проверить что контейнер запущен
+docker-compose ps
+
+# Проверить health check
+docker exec home-alice-relay wget -qO- http://localhost:8080/health
+```
+
+**WebSocket disconnects:**
+```bash
+# Проверить WebSocket Support включен в NPM
+# Проверить логи
+docker-compose logs -f | grep -i websocket
+```
+
+### Backup
+
+```bash
+# Backup .env файла (содержит API_KEY)
+cp relay/.env relay/.env.backup
+
+# Restore
+cp relay/.env.backup relay/.env
+docker-compose restart
+```
+
+---
+
 ## Быстрый старт (на VPS)
 
 ```bash
