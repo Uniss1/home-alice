@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  relay:
+    container_name: home-alice-relay
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: home-alice-relay:latest
+    restart: unless-stopped
+    environment:
+      - LISTEN_ADDR=${LISTEN_ADDR:-:8080}
+      - API_KEY=${API_KEY}
+    networks:
+      - nginx_default
+    ports:
+      - "8080"  # Internal only, not exposed to host
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
+
+networks:
+  nginx_default:
+    external: true
