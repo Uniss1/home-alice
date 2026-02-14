@@ -327,6 +327,7 @@ pyautogui==0.9.54
 comtypes==1.4.8
 pycaw==20240210
 pywin32==308
+httpx==0.27.0
 ```
 
 **Step 2: Create config.example.yaml**
@@ -718,8 +719,7 @@ git commit -m "feat(agent): add window management tools"
 
 ```python
 # tests/agent/tools/test_browser.py
-from unittest.mock import patch, MagicMock, AsyncMock
-import pytest
+from unittest.mock import patch, MagicMock
 from agent.tools.browser import open_url, search_vk_video
 
 
@@ -736,12 +736,11 @@ def test_open_url_failure(mock_open):
     assert "ошибка" in result.lower() or "error" in result.lower()
 
 
-@pytest.mark.asyncio
-@patch("agent.tools.browser.httpx.AsyncClient")
-async def test_search_vk_video(mock_client_cls):
-    mock_client = AsyncMock()
-    mock_client_cls.return_value.__aenter__ = AsyncMock(return_value=mock_client)
-    mock_client_cls.return_value.__aexit__ = AsyncMock(return_value=False)
+@patch("agent.tools.browser.httpx.Client")
+def test_search_vk_video(mock_client_cls):
+    mock_client = MagicMock()
+    mock_client_cls.return_value.__enter__ = MagicMock(return_value=mock_client)
+    mock_client_cls.return_value.__exit__ = MagicMock(return_value=False)
     mock_response = MagicMock()
     mock_response.json.return_value = {
         "response": {
@@ -750,9 +749,9 @@ async def test_search_vk_video(mock_client_cls):
         }
     }
     mock_response.raise_for_status = MagicMock()
-    mock_client.get = AsyncMock(return_value=mock_response)
+    mock_client.get = MagicMock(return_value=mock_response)
 
-    result = await search_vk_video("котики", vk_token="test-token")
+    result = search_vk_video("котики", vk_token="test-token")
     assert "vk.com" in result
 ```
 
@@ -777,7 +776,7 @@ def open_url(url: str) -> str:
         return f"Ошибка при открытии URL: {e}"
 
 
-async def search_vk_video(query: str, vk_token: str, channel_id: int | None = None) -> str:
+def search_vk_video(query: str, vk_token: str, channel_id: int | None = None) -> str:
     params = {
         "q": query,
         "access_token": vk_token,
@@ -789,8 +788,8 @@ async def search_vk_video(query: str, vk_token: str, channel_id: int | None = No
         params["owner_id"] = channel_id
 
     try:
-        async with httpx.AsyncClient() as client:
-            resp = await client.get(
+        with httpx.Client() as client:
+            resp = client.get(
                 "https://api.vk.com/method/video.search",
                 params=params,
                 timeout=5.0,
@@ -1103,7 +1102,6 @@ def test_tool_executor_shutdown(llm_config):
 
 ```python
 # agent/tool_executor.py
-import asyncio
 import logging
 from agent.tools.system import shutdown, reboot, sleep_pc, get_system_info
 from agent.tools.windows import list_windows, switch_window, close_window
@@ -1140,12 +1138,10 @@ class ToolExecutor:
                 case "open_url":
                     return open_url(args.get("url", ""))
                 case "search_vk_video":
-                    return asyncio.get_event_loop().run_until_complete(
-                        search_vk_video(
-                            args.get("query", ""),
-                            self.vk_token,
-                            args.get("channel_id"),
-                        )
+                    return search_vk_video(
+                        args.get("query", ""),
+                        self.vk_token,
+                        args.get("channel_id"),
                     )
                 case "volume_set":
                     return volume_set(args.get("level", 50))

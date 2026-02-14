@@ -16,3 +16,4 @@ venv/
 env/
 .venv/
 agent/config.yaml
+relay/relay
