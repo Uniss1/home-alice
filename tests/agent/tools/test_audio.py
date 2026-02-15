@@ -3,7 +3,7 @@ from unittest.mock import patch, MagicMock
 from agent.tools.audio import volume_set, volume_mute
 
 
-@patch("agent.tools.audio._get_volume_interface")
+@patch("shared.volume._get_volume_interface")
 def test_volume_set(mock_iface):
     mock_vol = MagicMock()
     mock_iface.return_value = mock_vol
@@ -12,7 +12,7 @@ def test_volume_set(mock_iface):
     assert "75" in result
 
 
-@patch("agent.tools.audio._get_volume_interface")
+@patch("shared.volume._get_volume_interface")
 def test_volume_set_clamps_above_100(mock_iface):
     mock_vol = MagicMock()
     mock_iface.return_value = mock_vol
@@ -20,7 +20,7 @@ def test_volume_set_clamps_above_100(mock_iface):
     mock_vol.SetMasterVolumeLevelScalar.assert_called_once_with(1.0, None)
 
 
-@patch("agent.tools.audio._get_volume_interface")
+@patch("shared.volume._get_volume_interface")
 def test_volume_set_clamps_below_0(mock_iface):
     mock_vol = MagicMock()
     mock_iface.return_value = mock_vol
@@ -28,7 +28,7 @@ def test_volume_set_clamps_below_0(mock_iface):
     mock_vol.SetMasterVolumeLevelScalar.assert_called_once_with(0.0, None)
 
 
-@patch("agent.tools.audio._get_volume_interface")
+@patch("shared.volume._get_volume_interface")
 def test_volume_mute_true(mock_iface):
     mock_vol = MagicMock()
     mock_iface.return_value = mock_vol
@@ -37,7 +37,7 @@ def test_volume_mute_true(mock_iface):
     assert "выключен" in result.lower()
 
 
-@patch("agent.tools.audio._get_volume_interface")
+@patch("shared.volume._get_volume_interface")
 def test_volume_mute_false(mock_iface):
     mock_vol = MagicMock()
     mock_iface.return_value = mock_vol
@@ -46,14 +46,14 @@ def test_volume_mute_false(mock_iface):
     assert "включён" in result.lower()
 
 
-@patch("agent.tools.audio._get_volume_interface")
+@patch("shared.volume._get_volume_interface")
 def test_volume_set_handles_exception(mock_iface):
     mock_iface.side_effect = Exception("Test error")
     result = volume_set(50)
     assert "Ошибка" in result
 
 
-@patch("agent.tools.audio._get_volume_interface")
+@patch("shared.volume._get_volume_interface")
 def test_volume_mute_handles_exception(mock_iface):
     mock_iface.side_effect = Exception("Test error")
     result = volume_mute(True)

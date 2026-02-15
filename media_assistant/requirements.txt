@@ -1,0 +1,28 @@
+# Media Assistant dependencies
+# Audio capture & processing
+PyAudioWPatch>=0.2.12
+speexdsp>=0.1.0
+
+# Wake word detection
+openwakeword>=0.6.0
+
+# Speech-to-text
+faster-whisper>=1.0.0
+vosk>=0.3.45
+
+# VAD & noise suppression
+silero-vad>=5.0
+deepfilternet>=0.5.0
+
+# LLM fallback (Ollama client)
+httpx>=0.27.0
+
+# Browser control
+playwright>=1.40.0
+
+# System control (Windows)
+pycaw>=20230407
+pywin32>=306
+
+# Config
+pyyaml>=6.0

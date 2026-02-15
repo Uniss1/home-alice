@@ -7,7 +7,7 @@ from agent.tools.browser_control import BrowserController
 @pytest.fixture
 def mock_playwright():
     """Set up mocked Playwright with browser, context, and pages."""
-    with patch("agent.tools.browser_control.sync_playwright") as mock_sp:
+    with patch("shared.browser.sync_playwright") as mock_sp:
         mock_pw = MagicMock()
         mock_sp.return_value.__enter__ = MagicMock(return_value=mock_pw)
         mock_sp.return_value.__exit__ = MagicMock(return_value=False)
