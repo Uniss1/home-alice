@@ -93,17 +93,37 @@ cd ..
 
 Media Assistant управляет браузером через Chrome DevTools Protocol. Нужен Chrome с открытым портом.
 
-### 6.1. Создание ярлыка
+### 6.1. Полностью закройте Chrome
 
-Создайте ярлык Chrome со следующей командой:
+Chrome переиспользует уже запущенный процесс и игнорирует новые флаги. Перед запуском с CDP **обязательно** убейте все процессы:
 
+```powershell
+taskkill /F /IM chrome.exe /T
 ```
-"C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222
+
+Убедитесь, что ни одного не осталось:
+
+```powershell
+Get-Process chrome -ErrorAction SilentlyContinue
 ```
 
-### 6.2. Проверка
+### 6.2. Запуск Chrome с CDP
 
-Откройте Chrome через этот ярлык, затем в другом браузере перейдите на:
+```powershell
+& "C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222 --user-data-dir="$env:LOCALAPPDATA\Google\Chrome\User Data"
+```
+
+> **Почему `--user-data-dir`?** Без него Chrome может подключиться к фоновому процессу и проигнорировать `--remote-debugging-port`. Явное указание профиля гарантирует запуск нового процесса с нужными флагами. Путь выше — ваш стандартный профиль со всеми расширениями (uBlock и т.д.).
+
+### 6.3. Проверка
+
+В **другом** окне PowerShell:
+
+```powershell
+netstat -ano | findstr 9222
+```
+
+Должна быть строка с `LISTENING`. Затем откройте в браузере:
 
 ```
 http://localhost:9222/json
@@ -111,7 +131,22 @@ http://localhost:9222/json
 
 Должен вернуться JSON со списком вкладок.
 
-> **Важно:** uBlock Origin и другие расширения работают — CDP подключается к реальному профилю Chrome.
+### 6.4. Если порт не слушает
+
+| Проблема | Решение |
+|----------|---------|
+| Chrome был запущен без флага | `taskkill /F /IM chrome.exe /T`, затем запустить заново |
+| Фоновые процессы Chrome | Добавить `--disable-background-mode` к команде запуска |
+| Всё равно не работает | Использовать временный профиль: `--user-data-dir="$env:TEMP\chrome-debug"` (чистый, без расширений) |
+
+### 6.5. Ярлык для постоянного использования
+
+Создайте ярлык на рабочем столе:
+
+- **Объект:** `"C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222 --user-data-dir="%LOCALAPPDATA%\Google\Chrome\User Data"`
+- **Название:** Chrome (CDP)
+
+Всегда запускайте Chrome через этот ярлык, предварительно убив старые процессы.
 
 ---
 
@@ -259,13 +294,29 @@ python -m pytest tests/media_assistant/ -v
 
 ## Устранение неполадок
 
+### Chrome CDP
+
+| Проблема | Решение |
+|----------|---------|
+| Порт 9222 не слушает | `taskkill /F /IM chrome.exe /T`, затем запустить с `--remote-debugging-port=9222 --user-data-dir="..."` |
+| Порт всё ещё не слушает | Добавить `--disable-background-mode` или использовать временный профиль: `--user-data-dir="$env:TEMP\chrome-debug"` |
+| `http://localhost:9222/json` не открывается | Проверить `netstat -ano \| findstr 9222` — должен быть LISTENING |
+| Нет расширений (uBlock) | Указать свой профиль: `--user-data-dir="%LOCALAPPDATA%\Google\Chrome\User Data"` |
+
+### Зависимости и CUDA
+
 | Проблема | Решение |
 |----------|---------|
 | `No module named 'pyaudiowpatch'` | `pip install PyAudioWPatch` |
 | `CUDA out of memory` | Уменьшить модель: `whisper_model: medium` в config.yaml |
-| Chrome не подключается | Проверить `http://localhost:9222/json` в браузере |
-| Ollama не отвечает | `ollama serve` в отдельном терминале |
-| Микрофон не найден | Проверить `mic_device` в config.yaml, или установить как default в Windows |
+| `nvidia-smi` не найден | Установить NVIDIA драйверы и CUDA Toolkit |
+| Ollama не отвечает | `ollama serve` в отдельном терминале, проверить `http://localhost:11434/api/tags` |
+
+### Аудио и микрофон
+
+| Проблема | Решение |
+|----------|---------|
+| Микрофон не найден | Проверить `mic_device` в config.yaml или установить как default в настройках Windows |
 | Wake word не срабатывает | Снизить `threshold` до 0.6-0.7 |
 | Ложные срабатывания wake word | Повысить `threshold` до 0.85-0.9 |
 | Эхо от колонок активирует wake word | Повысить `energy_ratio_threshold` до 2.0-3.0 |
